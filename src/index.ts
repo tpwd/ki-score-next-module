@@ -4,7 +4,7 @@ import { DEFAULT_EXCLUDED_PATHS, FIELD_LIMITS, clientIp, isPageView, trackedUrl,
 export const DEFAULT_API_ENDPOINT = "https://api.kiscore.ai/track"
 
 export interface KiScoreOptions {
-  /** Site ID from the KI Score dashboard. Default: `KISCORE_SITE_ID`. */
+  /** Site ID from the KIscore dashboard. Default: `KISCORE_SITE_ID`. */
   siteId?: string
   /** Server-only tracking secret. Default: `KISCORE_TRACKING_SECRET`. */
   trackingSecret?: string
@@ -31,7 +31,7 @@ export interface WaitUntilEvent {
 }
 
 /**
- * Reports a page view to KI Score in the background. KI Score stores AI
+ * Reports a page view to KIscore in the background. KIscore stores AI
  * crawler hits and visits referred by AI assistants; other visits are
  * discarded. Never throws and never delays the response.
  */
@@ -64,7 +64,7 @@ export function trackKiScore(request: Request, event?: WaitUntilEvent, options: 
 type ProxyResult = Response | null | undefined | void
 
 /**
- * Creates a Next.js proxy (or middleware) that reports page views to KI Score.
+ * Creates a Next.js proxy (or middleware) that reports page views to KIscore.
  *
  * ```ts
  * // proxy.ts
@@ -112,7 +112,7 @@ function resolveConfig(options: KiScoreOptions): ResolvedConfig | undefined {
   const siteId = (options.siteId ?? env("KISCORE_SITE_ID") ?? "").trim()
   const trackingSecret = (options.trackingSecret ?? env("KISCORE_TRACKING_SECRET") ?? "").trim()
   if (!siteId || !trackingSecret) {
-    warnOnce("KISCORE_SITE_ID or KISCORE_TRACKING_SECRET is missing, nothing is sent to KI Score.")
+    warnOnce("KISCORE_SITE_ID or KISCORE_TRACKING_SECRET is missing, nothing is sent to KIscore.")
     return undefined
   }
 
@@ -125,7 +125,7 @@ function resolveConfig(options: KiScoreOptions): ResolvedConfig | undefined {
     .toLowerCase()
   if (!clientIpHeader) {
     warnOnce(
-      "KISCORE_CLIENT_IP_HEADER is missing, nothing is sent to KI Score. Set it to the header your hosting proxy fills with the visitor IP, e.g. x-real-ip.",
+      "KISCORE_CLIENT_IP_HEADER is missing, nothing is sent to KIscore. Set it to the header your hosting proxy fills with the visitor IP, e.g. x-real-ip.",
     )
     return undefined
   }

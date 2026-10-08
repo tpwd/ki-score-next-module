@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url"
 
 // Builds test/fixtures/next-app (proxy.ts: `export const proxy = withKiScore()`)
 // against the built package and serves it with `next start`. A local collector
-// stands in for the KI Score API.
+// stands in for the KIscore API.
 
 const root = fileURLToPath(new URL("../..", import.meta.url))
 const fixture = "test/fixtures/next-app"

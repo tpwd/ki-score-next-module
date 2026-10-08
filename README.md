@@ -1,9 +1,9 @@
 # next-ki-score
 
-Server-side AI traffic tracking for Next.js, powered by [KI Score](https://kiscore.ai).
+Server-side AI traffic tracking for Next.js, powered by [KIscore](https://kiscore.ai).
 
-Every page request is reported from your Next.js server to KI Score in the
-background. KI Score keeps the hits of AI crawlers (GPTBot, ClaudeBot,
+Every page request is reported from your Next.js server to KIscore in the
+background. KIscore keeps the hits of AI crawlers (GPTBot, ClaudeBot,
 PerplexityBot, …) and visits referred by AI assistants such as ChatGPT or
 Perplexity. Everything else is discarded.
 
@@ -22,7 +22,7 @@ npm install next-ki-score
 ```
 
 **2. Set the environment variables** on your server or hosting platform. Copy
-the values from **Traffic Overview → Integration** in the KI Score dashboard.
+the values from **Traffic Overview → Integration** in the KIscore dashboard.
 
 ```bash
 KISCORE_SITE_ID=your-site-id
@@ -96,7 +96,7 @@ so it has to be written in your own `proxy.ts`.
 
 ## Visitor IP
 
-KI Score counts each visitor once per day and source and needs the visitor IP
+KIscore counts each visitor once per day and source and needs the visitor IP
 for that. For human visitors it stores only a daily hash, never the address
 itself; AI crawler hits are stored with their IP. In a proxy, Next.js does not
 expose the connection IP, so the package reads it from a header that **your

@@ -1,7 +1,7 @@
 {
   "name": "next-ki-score",
   "version": "1.0.0",
-  "description": "Server-side AI crawler and AI referral tracking for Next.js, powered by KI Score",
+  "description": "Server-side AI crawler and AI referral tracking for Next.js, powered by KIscore",
   "license": "MIT",
   "type": "module",
   "keywords": [

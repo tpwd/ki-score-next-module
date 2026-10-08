@@ -172,7 +172,7 @@ describe("trackKiScore", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
-  // Without the visitor's own IP, KI Score would attribute every visit to the
+  // Without the visitor's own IP, KIscore would attribute every visit to the
   // Next.js server and count them all as one visitor.
   test("skips requests without exactly one valid client IP", async () => {
     for (const ip of ["", "unknown", "203.0.113.7, 198.51.100.2", "999.1.1.1", "::g"]) {

@@ -1,4 +1,4 @@
-// Byte limits of the KI Score tracking API. Longer values are rejected with 413.
+// Byte limits of the KIscore tracking API. Longer values are rejected with 413.
 export const FIELD_LIMITS = { url: 2048, user_agent: 1024, referer: 2048 } as const
 
 export const DEFAULT_EXCLUDED_PATHS: readonly string[] = ["/api/", "/_next/", "/_vercel/", "/__nextjs"]
@@ -61,7 +61,7 @@ export function isIpAddress(value: string): boolean {
 }
 
 /**
- * Path plus utm_* parameters. KI Score recognises AI referrals by utm_source;
+ * Path plus utm_* parameters. KIscore recognises AI referrals by utm_source;
  * other query parameters can carry tokens or email addresses and stay on the
  * site's server.
  */
