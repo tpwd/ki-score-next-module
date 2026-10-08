@@ -1,0 +1,62 @@
+{
+  "name": "next-ki-score",
+  "version": "1.0.0",
+  "description": "Server-side AI crawler and AI referral tracking for Next.js, powered by KI Score",
+  "license": "MIT",
+  "type": "module",
+  "keywords": [
+    "nextjs",
+    "next",
+    "proxy",
+    "middleware",
+    "ai",
+    "crawler",
+    "gptbot",
+    "geo",
+    "kiscore"
+  ],
+  "homepage": "https://kiscore.ai",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18.17"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test test/unit",
+    "test:e2e": "bun run build && bun test test/e2e --timeout 240000",
+    "prepublishOnly": "bun run typecheck && bun run test && bun run test:e2e"
+  },
+  "peerDependencies": {
+    "next": ">=15"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.2",
+    "@types/node": "^24",
+    "@types/react": "^19",
+    "react": "^19",
+    "react-dom": "^19",
+    "tsdown": "^0.23.0",
+    "typescript": "^5",
+    "next": "^16.4.0"
+  }
+}
