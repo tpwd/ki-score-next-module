@@ -4,6 +4,8 @@ import { DEFAULT_EXCLUDED_PATHS, FIELD_LIMITS, clientIp, isPageView, trackedUrl,
 export const DEFAULT_API_ENDPOINT = "https://api.kiscore.ai/track"
 
 export interface KiScoreOptions {
+  /** Dashboard connection key (`site-id.tracking-secret`). Default: `KISCORE_CONNECTION_KEY`. */
+  connectionKey?: string
   /** Site ID from the KIscore dashboard. Default: `KISCORE_SITE_ID`. */
   siteId?: string
   /** Server-only tracking secret. Default: `KISCORE_TRACKING_SECRET`. */
@@ -33,32 +35,43 @@ export interface WaitUntilEvent {
 /**
  * Reports a page view to KIscore in the background. KIscore stores AI
  * crawler hits and visits referred by AI assistants; other visits are
- * discarded. Never throws and never delays the response.
+ * discarded. Errors are contained; pass the proxy event to keep background
+ * delivery alive without awaiting the collector response.
  */
-export function trackKiScore(request: Request, event?: WaitUntilEvent, options: KiScoreOptions = {}): Promise<void> {
-  const config = resolveConfig(options)
-  if (!config) return Promise.resolve()
+export async function trackKiScore(
+  request: Request,
+  event?: WaitUntilEvent,
+  options: KiScoreOptions = {},
+): Promise<void> {
+  try {
+    const config = resolveConfig(options)
+    if (!config) return Promise.resolve()
 
-  const url = new URL(request.url)
-  if (!isPageView(request, url, [...DEFAULT_EXCLUDED_PATHS, ...config.excludePaths])) {
-    return Promise.resolve()
-  }
+    const url = new URL(request.url)
+    if (!isPageView(request, url, [...DEFAULT_EXCLUDED_PATHS, ...config.excludePaths])) {
+      return Promise.resolve()
+    }
 
-  const ip = clientIp(request, config.clientIpHeader)
-  if (!ip) {
-    debug(config.debug, `Skipped ${url.pathname}: no single valid IP in the "${config.clientIpHeader}" header.`)
-    return Promise.resolve()
-  }
+    const ip = clientIp(request, config.clientIpHeader)
+    if (!ip) {
+      debug(config.debug, `Skipped ${url.pathname}: no single valid IP in the "${config.clientIpHeader}" header.`)
+      return Promise.resolve()
+    }
 
-  const payload = {
-    url: trackedUrl(url),
-    user_agent: truncateUtf8(request.headers.get("user-agent") ?? "", FIELD_LIMITS.user_agent),
-    referer: truncateUtf8(request.headers.get("referer") ?? "", FIELD_LIMITS.referer),
-    ip,
+    const payload = {
+      url: trackedUrl(url),
+      user_agent: truncateUtf8(request.headers.get("user-agent") ?? "", FIELD_LIMITS.user_agent),
+      referer: truncateUtf8(request.headers.get("referer") ?? "", FIELD_LIMITS.referer),
+      ip,
+    }
+    const sending = send(config, payload)
+    event?.waitUntil(sending)
+    await sending
+  } catch {
+    // Tracking configuration must never break the customer's request handler.
+    // Do not log the supplied configuration: it contains the tracking secret.
+    warnOnce("Tracking skipped because its configuration or background event is invalid.")
   }
-  const sending = send(config, payload)
-  event?.waitUntil(sending)
-  return sending
 }
 
 type ProxyResult = Response | null | undefined | void
@@ -89,7 +102,7 @@ export function withKiScore(
 
   return async (request, event) => {
     const result = handler ? await handler(request, event) : undefined
-    if (!isRedirect(result)) void trackKiScore(request, event, options)
+    if (isPageResponse(result)) void trackKiScore(request, event, options)
     return result
   }
 }
@@ -109,10 +122,18 @@ function resolveConfig(options: KiScoreOptions): ResolvedConfig | undefined {
     return undefined
   }
 
-  const siteId = (options.siteId ?? env("KISCORE_SITE_ID") ?? "").trim()
-  const trackingSecret = (options.trackingSecret ?? env("KISCORE_TRACKING_SECRET") ?? "").trim()
+  const connectionKey = options.connectionKey ?? env("KISCORE_CONNECTION_KEY")
+  const parts = connectionKey?.trim().split(".")
+  if (parts && (parts.length !== 2 || !parts[0]?.trim() || !parts[1]?.trim())) {
+    warnOnce("KISCORE_CONNECTION_KEY must contain site-id.tracking-secret; nothing is sent to KIscore.")
+    return undefined
+  }
+  const siteId = (options.siteId ?? parts?.[0] ?? env("KISCORE_SITE_ID") ?? "").trim()
+  const trackingSecret = (options.trackingSecret ?? parts?.[1] ?? env("KISCORE_TRACKING_SECRET") ?? "").trim()
   if (!siteId || !trackingSecret) {
-    warnOnce("KISCORE_SITE_ID or KISCORE_TRACKING_SECRET is missing, nothing is sent to KIscore.")
+    warnOnce(
+      "KISCORE_CONNECTION_KEY (or KISCORE_SITE_ID and KISCORE_TRACKING_SECRET) is missing, nothing is sent to KIscore.",
+    )
     return undefined
   }
 
@@ -133,7 +154,9 @@ function resolveConfig(options: KiScoreOptions): ResolvedConfig | undefined {
   return {
     siteId,
     trackingSecret,
-    apiEndpoint: (options.apiEndpoint ?? env("KISCORE_API_ENDPOINT") ?? DEFAULT_API_ENDPOINT).trim().replace(/\/+$/, ""),
+    apiEndpoint: (options.apiEndpoint ?? env("KISCORE_API_ENDPOINT") ?? DEFAULT_API_ENDPOINT)
+      .trim()
+      .replace(/\/+$/, ""),
     clientIpHeader,
     debug: options.debug ?? isOn(env("KISCORE_DEBUG")),
     timeout: options.timeout ?? 2000,
@@ -161,8 +184,11 @@ async function send(config: ResolvedConfig, payload: { url: string }): Promise<v
   }
 }
 
-function isRedirect(result: ProxyResult): boolean {
-  return Boolean(result && result.status >= 300 && result.status < 400)
+function isPageResponse(result: ProxyResult): boolean {
+  if (!result) return true
+  if (result.status < 200 || result.status >= 300 || result.status === 204 || result.status === 205) return false
+  const type = result.headers.get("content-type")
+  return !type || type.toLowerCase().includes("text/html")
 }
 
 function env(key: string): string | undefined {

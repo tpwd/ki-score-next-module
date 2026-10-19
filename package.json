@@ -34,20 +34,23 @@
   "types": "./dist/index.d.cts",
   "sideEffects": false,
   "files": [
-    "dist"
+    "dist",
+    "CHANGELOG.md"
   ],
   "engines": {
-    "node": ">=18.17"
+    "node": ">=18.18"
   },
   "scripts": {
     "build": "tsdown",
     "typecheck": "tsc --noEmit",
     "test": "bun test test/unit",
     "test:e2e": "bun run build && bun test test/e2e --timeout 240000",
-    "prepublishOnly": "bun run typecheck && bun run test && bun run test:e2e"
+    "test:package": "bun run build && bun test test/package",
+    "prepack": "npm run build",
+    "prepublishOnly": "bun run typecheck && bun run test && bun run test:e2e && bun run test:package"
   },
   "peerDependencies": {
-    "next": ">=15"
+    "next": "^15.0.0 || ^16.0.0"
   },
   "devDependencies": {
     "@types/bun": "^1.4.2",
@@ -65,5 +68,8 @@
   },
   "bugs": {
     "url": "https://github.com/tpwd/ki-score-next-module/issues"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import type { NextFetchEvent, NextProxy, NextRequest } from "next/server"
+import type { NextFetchEvent, NextMiddleware as NextProxy, NextRequest } from "next/server"
 import { trackKiScore, withKiScore } from "next-ki-score"
 
 // Type-checked by `next build` against the real Next.js types, never executed.

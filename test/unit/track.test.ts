@@ -5,6 +5,7 @@ import { trackKiScore, withKiScore } from "../../src/index"
 import { resetWarnings } from "../../src/log"
 
 const ENV_KEYS = [
+  "KISCORE_CONNECTION_KEY",
   "KISCORE_SITE_ID",
   "KISCORE_TRACKING_SECRET",
   "KISCORE_API_ENDPOINT",
@@ -26,9 +27,7 @@ beforeEach(() => {
   process.env.KISCORE_SITE_ID = "site-123"
   process.env.KISCORE_TRACKING_SECRET = "local-test-only"
   process.env.KISCORE_CLIENT_IP_HEADER = "x-real-ip"
-  fetchMock = spyOn(globalThis, "fetch").mockImplementation(
-    fakeFetch(async () => new Response(null, { status: 200 })),
-  )
+  fetchMock = spyOn(globalThis, "fetch").mockImplementation(fakeFetch(async () => new Response(null, { status: 200 })))
   warnMock = spyOn(console, "warn").mockImplementation(() => {})
   resetWarnings()
 })
@@ -66,7 +65,10 @@ function request(
 
 function event() {
   const pending: Promise<unknown>[] = []
-  return { pending, waitUntil: (promise: Promise<unknown>) => pending.push(promise) }
+  return {
+    pending,
+    waitUntil: (promise: Promise<unknown>) => pending.push(promise),
+  }
 }
 
 function sentBody(call = 0) {
@@ -74,6 +76,32 @@ function sentBody(call = 0) {
 }
 
 describe("trackKiScore", () => {
+  test("accepts the dashboard connection key without separate credentials", async () => {
+    delete process.env.KISCORE_SITE_ID
+    delete process.env.KISCORE_TRACKING_SECRET
+    process.env.KISCORE_CONNECTION_KEY = " key-site.key-secret "
+    await trackKiScore(request(), event())
+    expect(fetchMock.mock.calls[0]?.[0]).toBe("https://api.kiscore.ai/track/key-site")
+    expect(fetchMock.mock.calls[0]?.[1]?.headers).toMatchObject({
+      "X-Kiscore-Tracking-Secret": "key-secret",
+    })
+  })
+
+  test("skips a malformed connection key instead of using stale credentials", async () => {
+    for (const key of ["missing-secret", "site.", ".secret", "site.secret.extra"]) {
+      process.env.KISCORE_CONNECTION_KEY = key
+      await trackKiScore(request(), event())
+    }
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(warnMock).toHaveBeenCalledTimes(1)
+  })
+
+  test("does not break the page when the configured IP header is invalid", async () => {
+    process.env.KISCORE_CLIENT_IP_HEADER = "not a header"
+    await expect(trackKiScore(request(), event())).resolves.toBeUndefined()
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
   test("sends an authenticated hit with the path and its utm parameters only", async () => {
     const ev = event()
     await trackKiScore(request(), ev)
@@ -118,7 +146,9 @@ describe("trackKiScore", () => {
 
     const [url, init] = fetchMock.mock.calls[0]!
     expect(url).toBe("https://collector.example.test/track/site%2Fwith%20space")
-    expect(init?.headers).toMatchObject({ "X-Kiscore-Tracking-Secret": "option-secret" })
+    expect(init?.headers).toMatchObject({
+      "X-Kiscore-Tracking-Secret": "option-secret",
+    })
     expect(sentBody().ip).toBe("2001:db8::1")
   })
 
@@ -150,18 +180,31 @@ describe("trackKiScore", () => {
   // parameter. Browsers still mark client navigations and prefetches as fetches.
   test("skips browser fetches such as client navigations and link prefetches", async () => {
     await trackKiScore(
-      request("/about", { accept: "*/*", "sec-fetch-mode": "cors", "sec-fetch-dest": "empty" }),
+      request("/about", {
+        accept: "*/*",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+      }),
     )
     expect(fetchMock).not.toHaveBeenCalled()
 
-    await trackKiScore(request("/about", { "sec-fetch-mode": "navigate", "sec-fetch-dest": "document" }))
+    await trackKiScore(
+      request("/about", {
+        "sec-fetch-mode": "navigate",
+        "sec-fetch-dest": "document",
+      }),
+    )
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
   test("honours additional excluded paths", async () => {
-    await trackKiScore(request("/admin/users"), undefined, { excludePaths: ["/admin"] })
+    await trackKiScore(request("/admin/users"), undefined, {
+      excludePaths: ["/admin"],
+    })
     expect(fetchMock).not.toHaveBeenCalled()
-    await trackKiScore(request("/administration"), undefined, { excludePaths: ["/admin/"] })
+    await trackKiScore(request("/administration"), undefined, {
+      excludePaths: ["/admin/"],
+    })
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
@@ -239,6 +282,24 @@ describe("trackKiScore", () => {
 })
 
 describe("withKiScore", () => {
+  test("preserves the proxy response even if tracking configuration is invalid", async () => {
+    process.env.KISCORE_CLIENT_IP_HEADER = "not a header"
+    const response = new Response("page")
+    expect(await withKiScore(() => response)(request(), event())).toBe(response)
+  })
+
+  test("does not track failed or explicitly non-HTML proxy responses", async () => {
+    for (const response of [
+      new Response("unauthorized", { status: 401 }),
+      new Response("unavailable", { status: 503 }),
+      new Response(null, { status: 204 }),
+      Response.json({ ok: true }),
+    ]) {
+      expect(await withKiScore(() => response)(request(), event())).toBe(response)
+    }
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
   test("continues the request when used without an own proxy", async () => {
     const proxy = withKiScore()
     const ev = event()
