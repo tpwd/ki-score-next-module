@@ -4,7 +4,7 @@ import { cpSync, mkdtempSync, readFileSync, renameSync, rmSync } from "node:fs"
 import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 
-// Builds test/fixtures/next-app (proxy.ts: `export const proxy = withKiScore()`)
+// Builds test/fixtures/next-app (default export from `withKiScore()`)
 // against the built package and serves it with `next start`. A local collector
 // stands in for the KIscore API.
 
