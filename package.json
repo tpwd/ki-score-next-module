@@ -1,6 +1,6 @@
 {
   "name": "next-ki-score",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Server-side AI crawler and AI referral tracking for Next.js, powered by KIscore",
   "license": "MIT",
   "type": "module",
@@ -56,11 +56,11 @@
     "@types/bun": "^1.4.2",
     "@types/node": "^24",
     "@types/react": "^19",
+    "next": "^16.4.6",
     "react": "^19",
     "react-dom": "^19",
     "tsdown": "^0.23.0",
-    "typescript": "^5",
-    "next": "^16.4.0"
+    "typescript": "^5"
   },
   "repository": {
     "type": "git",

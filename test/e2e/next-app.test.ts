@@ -128,7 +128,7 @@ describe("next start with withKiScore()", () => {
       body: {
         url: "/?utm_source=chatgpt.com&utm_campaign=e2e",
         user_agent: "KIscore-E2E-Page/1.0",
-        referer: "https://chatgpt.com/",
+        referer: "https://chatgpt.com",
         ip: "203.0.113.7",
       },
     })

@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         node: [22, 24]
-        next: ["^15.5.28", "^16.4.0"]
+        next: ["^15.5.29", "^16.4.6"]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7

@@ -1,5 +1,5 @@
 import { debug, warnOnce } from "./log"
-import { DEFAULT_EXCLUDED_PATHS, FIELD_LIMITS, clientIp, isPageView, trackedUrl, truncateUtf8 } from "./request"
+import { refererOrigin, DEFAULT_EXCLUDED_PATHS, FIELD_LIMITS, clientIp, isPageView, trackedUrl, truncateUtf8 } from "./request"
 
 export const DEFAULT_API_ENDPOINT = "https://api.kiscore.ai/track"
 
@@ -61,7 +61,7 @@ export async function trackKiScore(
     const payload = {
       url: trackedUrl(url),
       user_agent: truncateUtf8(request.headers.get("user-agent") ?? "", FIELD_LIMITS.user_agent),
-      referer: truncateUtf8(request.headers.get("referer") ?? "", FIELD_LIMITS.referer),
+      referer: truncateUtf8(refererOrigin(request.headers.get("referer")), FIELD_LIMITS.referer),
       ip,
     }
     const sending = send(config, payload)

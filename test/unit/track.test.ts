@@ -56,7 +56,7 @@ function request(
     headers: {
       accept: "text/html",
       "user-agent": "Mozilla/5.0",
-      referer: "https://chatgpt.com/",
+      referer: "https://chatgpt.com",
       "x-real-ip": "203.0.113.7",
       ...headers,
     },
@@ -121,7 +121,7 @@ describe("trackKiScore", () => {
     expect(sentBody()).toEqual({
       url: "/beratung?utm_source=chatgpt.com&utm_campaign=test",
       user_agent: "Mozilla/5.0",
-      referer: "https://chatgpt.com/",
+      referer: "https://chatgpt.com",
       ip: "203.0.113.7",
     })
   })
@@ -252,6 +252,18 @@ describe("trackKiScore", () => {
     ])
   })
 
+  // The path of an AI conversation or a reset token in the referrer of an own
+  // page is none of KIscore's business; it only needs the host.
+  test("sends only the origin of the referrer", async () => {
+    await trackKiScore(request("/", { "user-agent": "Mozilla/5.0", referer: "https://chatgpt.com/c/abc?q=private" }))
+    expect(sentBody().referer).toBe("https://chatgpt.com")
+  })
+
+  test("sends no referrer when it is not a web address", async () => {
+    await trackKiScore(request("/", { "user-agent": "Mozilla/5.0", referer: "not a link" }))
+    expect(sentBody().referer).toBe("")
+  })
+
   test("truncates oversized fields to the API limits without breaking characters", async () => {
     await trackKiScore(
       request(`/${"ä".repeat(1500)}`, {
@@ -264,7 +276,8 @@ describe("trackKiScore", () => {
     const bytes = (value: string) => new TextEncoder().encode(value).length
     expect(bytes(body.url)).toBeLessThanOrEqual(2048)
     expect(bytes(body.user_agent)).toBe(1024)
-    expect(bytes(body.referer)).toBe(2048)
+    // Of the referring page only scheme and host leave the server.
+    expect(body.referer).toBe("https://chatgpt.com")
     expect(body.url).not.toContain("�")
     expect(body.user_agent.startsWith("GPTBot ")).toBe(true)
   })

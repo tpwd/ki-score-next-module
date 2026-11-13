@@ -18,12 +18,8 @@ Perplexity. Everything else is discarded.
 **1. Install**
 
 ```bash
-npm install https://github.com/tpwd/ki-score-next-module/releases/download/v1.0.0/next-ki-score-1.0.0.tgz
+npm install next-ki-score
 ```
-
-The built package is published as a [GitHub release](https://github.com/tpwd/ki-score-next-module/releases/tag/v1.0.0).
-It is not yet published in the npm registry. The command above installs the
-release archive with npm; no build tools are needed in your application.
 
 **2. Set the environment variables** on your server or hosting platform. Copy
 the values from **Traffic Overview → Integration** in the KIscore dashboard.
@@ -132,7 +128,7 @@ For each page view, one `POST` request to `https://api.kiscore.ai/track/<site-id
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `url`        | Path plus `utm_*` parameters, e.g. `/pricing?utm_source=chatgpt.com`. Other query parameters can contain tokens or email addresses and are never sent. |
 | `user_agent` | The visitor's user agent                                                                                                                               |
-| `referer`    | The visitor's referrer                                                                                                                                 |
+| `referer`    | Scheme and host of the referring page, e.g. `https://chatgpt.com`. Its path and query are never sent. |
 | `ip`         | The visitor IP from the configured header                                                                                                              |
 
 The tracking secret travels in the `X-Kiscore-Tracking-Secret` header. The

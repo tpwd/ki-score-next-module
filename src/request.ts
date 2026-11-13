@@ -76,6 +76,17 @@ export function trackedUrl(url: URL): string {
   return tracked.replace(/%[\da-f]?$/i, "")
 }
 
+// Scheme and host of the referring page. Its path can name an AI conversation,
+// its query a search or, on an own page, a token; KIscore needs the host only.
+export function refererOrigin(referer: string | null): string {
+  try {
+    const url = new URL(referer ?? "")
+    return url.protocol === "http:" || url.protocol === "https:" ? url.origin : ""
+  } catch {
+    return ""
+  }
+}
+
 export function truncateUtf8(value: string, maxBytes: number): string {
   const bytes = new TextEncoder().encode(value)
   if (bytes.length <= maxBytes) return value

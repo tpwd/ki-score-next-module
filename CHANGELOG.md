@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1
+
+- Send only scheme and host of the referring page instead of its full address.
+- Install from the npm registry.
+
 ## 1.0.0
 
 - Server-side Next.js proxy and middleware integration through `withKiScore`.
